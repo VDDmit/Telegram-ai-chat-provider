@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bot_ai_provider
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      schema: bot_schema
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+  flyway:
+    enabled: true
+    locations: db/migration
+    schemas: bot_schema
+    baseline-on-migrate: true
+
+telegram:
+  api-url: https://api.telegram.org/
+  webhook-path: https://3e4466f67431.ngrok-free.app
+  bot-name: ${BOT_NAME}
+  bot-token: ${BOT_TOKEN}
+server:
+  port: 8080
