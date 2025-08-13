@@ -1,7 +1,15 @@
 package ru.vddmit.telegramaichatprovider.service;
 
-import org.springframework.stereotype.Service;
+import ru.vddmit.telegramaichatprovider.entity.Message;
+import ru.vddmit.telegramaichatprovider.entity.User;
 
-@Service
-public class MessageService {
+import java.util.List;
+
+public interface MessageService {
+
+    void save(Message message);
+
+    Message findById(Long id);
+
+    List<Message> getChatHistory(User user);
 }
