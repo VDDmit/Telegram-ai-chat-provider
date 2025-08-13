@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/bot_ai_provider
+    url: jdbc:postgresql://postgres:5432/bot_ai_provider
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -20,7 +20,7 @@ spring:
 
 telegram:
   api-url: https://api.telegram.org/
-  webhook-path: https://3e4466f67431.ngrok-free.app
+  webhook-path: https://ai-chat-provider.duckdns.org
   bot-name: ${BOT_NAME}
   bot-token: ${BOT_TOKEN}
 server:

@@ -18,6 +18,9 @@
         <java.version>17</java.version>
         <flyway>11.10.5</flyway>
         <telegram>6.9.7.1</telegram>
+        <genai>1.11.0</genai>
+        <lombok>1.18.38</lombok>
+        <dotenv>5.2.2</dotenv>
     </properties>
     <dependencies>
         <dependency>
@@ -52,7 +55,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.38</version>
+            <version>${lombok}</version>
         </dependency>
         <dependency>
             <groupId>org.telegram</groupId>
@@ -61,9 +64,15 @@
         </dependency>
 
         <dependency>
+            <groupId>com.google.genai</groupId>
+            <artifactId>google-genai</artifactId>
+            <version>${genai}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>java-dotenv</artifactId>
-            <version>5.2.2</version>
+            <version>${dotenv}</version>
         </dependency>
 
         <dependency>
