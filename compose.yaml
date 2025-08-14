@@ -19,14 +19,14 @@ services:
       - bot-network
 
   bot-app:
-    image: ghcr.io/vddmit/telegram-ai-chat-provider:v0.0.1
+    image: ghcr.io/vddmit/telegram-ai-chat-provider:${IMAGE_TAG:-latest}
     container_name: telegram-ai-bot
     depends_on:
       postgres:
         condition: service_healthy
-#    with no Nginx
-#    ports:
-#      - "8080:8080"
+    #    with no Nginx
+    #    ports:
+    #      - "8080:8080"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
