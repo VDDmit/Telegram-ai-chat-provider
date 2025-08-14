@@ -44,13 +44,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        id: build-and-push # Добавим id для получения метаданных
+        id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            ${{ env.IMAGE_NAME }}
+            ghcr.io/vddmit/telegram-ai-chat-provider:${{ github.sha }}
             ghcr.io/vddmit/telegram-ai-chat-provider:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -69,18 +69,20 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
-            # Переходим в директорию с docker-compose.yml
+            # Переходим в директорию
             cd /ai-chat-provider
 
-            # Логинимся в GHCR, используя Personal Access Token
-            # ВАЖНО: secrets.GITHUB_TOKEN здесь не сработает!
+            # Экспортируем переменную с новым тегом
+            export IMAGE_TAG=${{ github.sha }}
+
+            # Логинимся в GHCR
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Скачиваем новый образ
+            # Скачиваем новый образ по уникальному тегу
             docker-compose pull
 
-            # Перезапускаем контейнеры
+            # Перезапускаем контейнеры с новым образом (docker-compose подхватит переменную IMAGE_TAG)
             docker-compose up -d --force-recreate
 
-            # (Опционально) Удаляем старые неиспользуемые образы, чтобы освободить место
+            # (Опционально) Удаляем старые образы
             docker image prune -af
