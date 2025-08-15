@@ -20,7 +20,7 @@ spring:
 
 telegram:
   api-url: https://api.telegram.org/
-  webhook-path: https://ai-chat-provider.duckdns.org
+  webhook-path: https://ai-chat-prov.duckdns.org
   bot-name: ${BOT_NAME}
   bot-token: ${BOT_TOKEN}
 server:
