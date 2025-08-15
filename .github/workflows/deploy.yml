@@ -69,24 +69,26 @@ jobs:
           script: |
             cd /root/Telegram-ai-chat-provider
 
+            git pull
+
             cat <<EOF > .env
             POSTGRES_USER=${{ secrets.VPS_POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.VPS_POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.VPS_POSTGRES_DB }}
             POSTGRES_URL=${{ secrets.VPS_POSTGRES_URL }}
             
-            # BOT_NAME можно задать здесь или оставить пустым, если он не нужен
             BOT_NAME=${{ secrets.VPS_BOT_NAME }}
             BOT_TOKEN=${{ secrets.VPS_BOT_TOKEN }}
-
+            
             IMAGE_TAG=${{ github.sha }}
             EOF
 
-            # Логинимся в GitHub Container Registry
+            export $(grep -v '^#' .env | xargs)
+
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            docker-compose -f compose.yaml pull
-            docker-compose -f compose.yaml up -d --force-recreate
+            docker compose -f compose.yaml pull
 
-            # (Опционально) Очищаем старые, неиспользуемые образы Docker
+            docker compose -f compose.yaml up -d --force-recreate
+
             docker image prune -af
