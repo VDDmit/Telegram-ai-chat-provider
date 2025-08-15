@@ -19,7 +19,7 @@ services:
       - bot-network
 
   bot-app:
-    image: ghcr.io/vddmit/telegram-ai-chat-provider:${IMAGE_TAG:-latest}
+    image: ghcr.io/vddmit/telegram-ai-chat-provider:$${IMAGE_TAG:-latest}
     container_name: telegram-ai-bot
     depends_on:
       postgres:

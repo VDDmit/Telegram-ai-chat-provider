@@ -73,7 +73,8 @@ jobs:
             POSTGRES_USER=${{ secrets.VPS_POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.VPS_POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.VPS_POSTGRES_DB }}
-
+            POSTGRES_URL=${{ secrets.VPS_POSTGRES_URL }}
+            
             # BOT_NAME можно задать здесь или оставить пустым, если он не нужен
             BOT_NAME=${{ secrets.VPS_BOT_NAME }}
             BOT_TOKEN=${{ secrets.VPS_BOT_TOKEN }}
