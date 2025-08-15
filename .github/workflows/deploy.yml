@@ -7,7 +7,7 @@ on:
 
 # Переменные окружения для всего воркфлоу
 env:
-  #Это должно совпадать с тем, что в docker-compose.yml
+  #Это должно совпадать с тем, что в compose.yml
   IMAGE_NAME: ghcr.io/vddmit/telegram-ai-chat-provider:latest
 
 jobs:
@@ -55,7 +55,6 @@ jobs:
           echo "Docker image build and push completed."
 
   deploy:
-    # Этот шаг зависит от успешного завершения шага build-and-push
     needs: build-and-push
     runs-on: ubuntu-latest
 
@@ -68,18 +67,25 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
-            # Переходим в директорию
             cd /root/Telegram-ai-chat-provider
 
-            # Экспортируем переменную с новым тегом
-            export IMAGE_TAG=${{ github.sha }}
+            cat <<EOF > .env
+            POSTGRES_USER=${{ secrets.VPS_POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.VPS_POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.VPS_POSTGRES_DB }}
 
-            # Логинимся в GHCR
+            # BOT_NAME можно задать здесь или оставить пустым, если он не нужен
+            BOT_NAME=${{ secrets.VPS_BOT_NAME }}
+            BOT_TOKEN=${{ secrets.VPS_BOT_TOKEN }}
+
+            IMAGE_TAG=${{ github.sha }}
+            EOF
+
+            # Логинимся в GitHub Container Registry
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             docker-compose -f compose.yaml pull
-
             docker-compose -f compose.yaml up -d --force-recreate
 
-            # (Опционально) Удаляем старые образы
+            # (Опционально) Очищаем старые, неиспользуемые образы Docker
             docker image prune -af
