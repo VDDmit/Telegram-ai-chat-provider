@@ -8,7 +8,7 @@ on:
 # Переменные окружения для всего воркфлоу
 env:
   #Это должно совпадать с тем, что в docker-compose.yml
-  IMAGE_NAME: ghcr.io/vddmit/telegram-ai-chat-provider:v0.0.1
+  IMAGE_NAME: ghcr.io/vddmit/telegram-ai-chat-provider:latest
 
 jobs:
   build-and-push:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # Даем право на запись в GitHub Packages (GHCR)
+      packages: write
 
     steps:
       # 1. Скачиваем код из репозитория
