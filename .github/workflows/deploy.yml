@@ -77,9 +77,9 @@ jobs:
             # Логинимся в GHCR
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            docker-compose -f compose.yml pull
+            docker-compose -f compose.yaml pull
 
-            docker-compose -f compose.yml up -d --force-recreate
+            docker-compose -f compose.yaml up -d --force-recreate
 
             # (Опционально) Удаляем старые образы
             docker image prune -af
