@@ -5,7 +5,7 @@ on:
   push:
     branches: [ "main" ]
 
-# Переменные окружения для всего воркфлоу
+# Переменные окружения для всего воркфлоуs
 env:
   #Это должно совпадать с тем, что в compose.yml
   IMAGE_NAME: ghcr.io/vddmit/telegram-ai-chat-provider:latest
