@@ -47,7 +47,7 @@ services:
       - ./certbot/www:/var/www/certbot
     networks:
       - bot-network
-    command: /bin/sh -c "nginx -g 'daemon off;'"
+    command: /bin/sh -c "while [ ! -f /etc/letsencrypt/live/ai-chat-prov.duckdns.org/fullchain.pem ]; do sleep 1; done; nginx -g 'daemon off;'"
     depends_on:
       - bot-app
     restart: unless-stopped
@@ -58,22 +58,11 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    entrypoint: >
-      /bin/sh -c "
-        trap exit TERM;
-        while :; do
-          if [ ! -f /etc/letsencrypt/live/ai-chat-prov.duckdns.org/fullchain.pem ]; then
-            echo 'Сертификат не найден. Попытка получить...'
-            certbot certonly --webroot -w /var/www/certbot \
-              --non-interactive \
-              --agree-tos \
-              -m danvoropaeff@yandex.ru \
-              -d ai-chat-prov.duckdns.org
-          fi
-          certbot renew
-          sleep 12h & wait $${!}
-        done;
-      "
+    command: >
+      certonly --webroot -w /var/www/certbot 
+      --email danvoropaeff@yandex.ru 
+      -d ai-chat-prov.duckdns.org
+      --agree-tos --non-interactive --force-renewal
 
 volumes:
   postgres_data:
