@@ -3,7 +3,8 @@ name: Build and Deploy to VPS
 # Запускать воркфлоу при каждом push в ветку main
 on:
   push:
-    branches: [ "main" ]
+    # Запускается при пуше на любую ветку
+    branches: ['*']
 
 # Переменные окружения для всего воркфлоуs
 env:
