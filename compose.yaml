@@ -35,38 +35,28 @@ services:
       - bot-network
     restart: unless-stopped
 
-  nginx:
-    image: nginx:1.29.1
-    container_name: nginx-proxy
+  nginx-certbot:
+    image: jonasal/nginx-certbot:latest
+    container_name: nginx-certbot-proxy
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      - CERTBOT_EMAIL=danvoropaeff@yandex.ru
+      - STAGING=0
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    command: /bin/sh -c 'while [ ! -f /etc/letsencrypt/live/ai-chat-prov.duckdns.org/fullchain.pem ]; do echo "Waiting for certificate..."; sleep 5; done; nginx -g "daemon off;"'
+      - nginx_secrets:/etc/letsencrypt
+      - ./user_conf.d:/etc/nginx/user_conf.d:ro
     depends_on:
       - bot-app
-    restart: unless-stopped
     networks:
       - bot-network
 
-  certbot:
-    image: certbot/certbot:latest
-    container_name: certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    command: >
-      certonly --standalone
-      --email danvoropaeff@yandex.ru
-      -d ai-chat-prov.duckdns.org
-      --non-interactive --agree-tos
-      --http-01-port=80
-
 volumes:
   postgres_data:
+
+  nginx_secrets:
 
 networks:
   bot-network:
