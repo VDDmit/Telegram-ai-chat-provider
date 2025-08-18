@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -26,7 +27,7 @@ public class AIChatProviderBot extends SpringWebhookBot {
                              String botToken,
                              String botPath,
                              String botName,
-                             UpdateProcessor updateProcessor) {
+                             @Lazy UpdateProcessor updateProcessor) {
         super(setWebhook, botToken);
         this.botPath = botPath;
         this.botName = botName;
