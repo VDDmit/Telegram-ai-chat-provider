@@ -1,9 +1,9 @@
 package ru.vddmit.telegramaichatprovider.service.impl;
 
 import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -16,16 +16,19 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@RequiredArgsConstructor
 @Slf4j
 public class MessageLifecycleServiceImpl implements MessageLifecycleService {
 
     AIChatProviderBot bot;
-
     ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    public void scheduleMessagesDeletion(long chatId, int userMessageId, int botMessageId, long delayInSeconds) {
 
+    public MessageLifecycleServiceImpl(@Lazy AIChatProviderBot bot) {
+        this.bot = bot;
+    }
+
+    @Override
+    public void scheduleMessagesDeletion(long chatId, int userMessageId, int botMessageId, long delayInSeconds) {
         Runnable deletionTask = () -> {
             try {
                 bot.execute(new DeleteMessage(String.valueOf(chatId), userMessageId));
@@ -37,5 +40,4 @@ public class MessageLifecycleServiceImpl implements MessageLifecycleService {
         };
         scheduler.schedule(deletionTask, delayInSeconds, TimeUnit.SECONDS);
     }
-
 }
