@@ -1,30 +1,34 @@
 package ru.vddmit.telegramaichatprovider.utils;
 
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.vddmit.telegramaichatprovider.bot.AIChatProviderBot;
 import ru.vddmit.telegramaichatprovider.service.MessageLifecycleService;
 
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@RequiredArgsConstructor
 public class MessageUtils {
 
     AIChatProviderBot bot;
-    MessageLifecycleService messageLifecycleService;
+    final MessageLifecycleService messageLifecycleService;
 
-    public MessageUtils(@Lazy AIChatProviderBot bot, MessageLifecycleService messageLifecycleService) {
+    @Autowired
+    public void setBot(@Lazy AIChatProviderBot bot) {
         this.bot = bot;
-        this.messageLifecycleService = messageLifecycleService;
     }
 
     public void sendEphemeralMessage(Update update, String text, long chatId, int userMessageId, int delayInSeconds) throws TelegramApiException {
         SendMessage sendMessage = generateSendMessageWithText(update, text);
-        org.telegram.telegrambots.meta.api.objects.Message sentMessage = bot.execute(sendMessage);
+        Message sentMessage = bot.execute(sendMessage);
         int botMessageId = sentMessage.getMessageId();
         messageLifecycleService.scheduleMessagesDeletion(chatId, userMessageId, botMessageId, delayInSeconds);
     }
