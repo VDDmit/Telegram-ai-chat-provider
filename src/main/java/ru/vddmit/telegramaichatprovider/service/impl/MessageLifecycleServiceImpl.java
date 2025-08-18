@@ -3,6 +3,7 @@ package ru.vddmit.telegramaichatprovider.service.impl;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -15,15 +16,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Slf4j
 public class MessageLifecycleServiceImpl implements MessageLifecycleService {
 
     AIChatProviderBot bot;
-    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-
-    public MessageLifecycleServiceImpl(@Lazy AIChatProviderBot bot) {
+    @Autowired
+    public void setBot(@Lazy AIChatProviderBot bot) {
         this.bot = bot;
     }
 
@@ -36,6 +37,8 @@ public class MessageLifecycleServiceImpl implements MessageLifecycleService {
                 log.info("Successfully deleted messages {} and {} in chat {}", userMessageId, botMessageId, chatId);
             } catch (TelegramApiException e) {
                 log.warn("Could not delete messages in chat {}: {}", chatId, e.getMessage());
+            } catch (NullPointerException e) {
+                log.error("AIChatProviderBot is null in MessageLifecycleService. The circular dependency might not be fully resolved.", e);
             }
         };
         scheduler.schedule(deletionTask, delayInSeconds, TimeUnit.SECONDS);
