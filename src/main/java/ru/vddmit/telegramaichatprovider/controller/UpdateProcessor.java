@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.vddmit.telegramaichatprovider.bot.handler.ChatHandler;
 import ru.vddmit.telegramaichatprovider.utils.MessageUtils;
 
@@ -22,7 +23,7 @@ public class UpdateProcessor {
     List<ChatHandler> handlers;
     MessageUtils messageUtils;
 
-    public BotApiMethod<?> processUpdate(Update update) {
+    public BotApiMethod<?> processUpdate(Update update) throws TelegramApiException {
 
         if (update == null) {
             log.warn("Получено пустое обновление (update is null).");

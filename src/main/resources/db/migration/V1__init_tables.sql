@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS messages
     id         BIGINT PRIMARY KEY,
     user_id    BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     role       BOOLEAN     NOT NULL, -- true = AI, false = user
-    content    TEXT        NOT NULL,
+    content    TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_messages_user_created ON messages (user_id, created_at DESC);

@@ -5,6 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.vddmit.telegramaichatprovider.bot.AIChatProviderBot;
 import ru.vddmit.telegramaichatprovider.entity.Message;
 import ru.vddmit.telegramaichatprovider.entity.User;
 import ru.vddmit.telegramaichatprovider.repository.MessageRepository;
@@ -20,6 +23,17 @@ import java.util.List;
 public class MessageServiceImpl implements MessageService {
 
     MessageRepository messageRepository;
+    AIChatProviderBot bot;
+
+    public void sendAndSaveBotMessage(SendMessage sendMessage, User user) throws TelegramApiException {
+        org.telegram.telegrambots.meta.api.objects.Message sentMessage =
+                bot.execute(sendMessage);
+        save(Message.builder()
+                .id(Long.valueOf(sentMessage.getMessageId()))
+                .user(user)
+                .role(true)
+                .build());
+    }
 
     @Override
     public void save(Message message) {

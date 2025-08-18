@@ -4,7 +4,7 @@ name: Build and Deploy to VPS
 on:
   push:
     # Запускается при пуше на любую ветку
-    branches: ['*']
+    branches: [ '*' ]
 
 # Переменные окружения для всего воркфлоуs
 env:
@@ -71,7 +71,7 @@ jobs:
             cd /root/Telegram-ai-chat-provider
 
             git fetch origin
-            git reset --hard origin/feature-2  # <-- изменить, когда переход в другую ветку
+            git reset --hard origin/feature-3  # <-- изменить, когда переход в другую ветку
 
             echo "Creating .env file..."
 

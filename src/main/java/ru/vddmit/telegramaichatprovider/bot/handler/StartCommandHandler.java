@@ -6,7 +6,9 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.vddmit.telegramaichatprovider.entity.Message;
 import ru.vddmit.telegramaichatprovider.entity.User;
 import ru.vddmit.telegramaichatprovider.entity.enums.StartBotState;
@@ -32,16 +34,23 @@ public class StartCommandHandler implements ChatHandler {
 
     @Override
     public boolean canHandle(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            Long chatId = update.getMessage().getChatId();
-            String text = update.getMessage().getText();
-            return text.equals("/start") || userStates.get(chatId) != null && userStates.get(chatId) != StartBotState.NONE;
+        Long chatId = update.getMessage().getChatId();
+        String text = update.getMessage().getText();
+        org.telegram.telegrambots.meta.api.objects.User tgUser =
+                update.getMessage().getFrom();
+
+        if (userService.findById(tgUser.getId()) == null) {
+            return false;
+        } else if (update.hasMessage() && update.getMessage().hasText()) {
+            return text.equals("/start")
+                    || userStates.get(chatId) != null
+                    && userStates.get(chatId) != StartBotState.NONE;
         }
         return false;
     }
 
     @Override
-    public BotApiMethod<?> handle(Update update) {
+    public BotApiMethod<?> handle(Update update) throws TelegramApiException {
         Long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
         org.telegram.telegrambots.meta.api.objects.User tgUser = update.getMessage().getFrom();
@@ -51,12 +60,18 @@ public class StartCommandHandler implements ChatHandler {
         if (text.equals("/start")) {
             userStates.put(chatId, StartBotState.WAITING_FOR_MODEL_NAME);
             tempModelName.remove(chatId);
-            return messageUtils
+            SendMessage sendStartMessage = messageUtils
                     .generateSendMessageWithText(update, """ 
                             Привет! Введите название нейросети (корректное название модели можете узнать в документации или через API),
                             которую хотите использовать:
                             пока поддерживаю только Gemini
-                            || Пример:gemini-2.5-pro ||""");
+                            
+                            Пример: gemini-2.5-pro""");
+
+            messageService
+                    .sendAndSaveBotMessage(sendStartMessage, user);
+
+            return null;
         }
 
         StartBotState state = userStates.getOrDefault(chatId, StartBotState.NONE);
@@ -65,9 +80,16 @@ public class StartCommandHandler implements ChatHandler {
             case WAITING_FOR_MODEL_NAME:
                 tempModelName.put(chatId, text);
                 userStates.put(chatId, StartBotState.WAITING_FOR_API_KEY);
-                return messageUtils
+
+                SendMessage sendMessage = messageUtils
                         .generateSendMessageWithText(update, "Модель сохранена. Теперь введите API-ключ:");
+
+                messageService
+                        .sendAndSaveBotMessage(sendMessage, user);
+                return null;
+
             case WAITING_FOR_API_KEY:
+
                 String modelName = tempModelName.get(chatId);
 
                 user.setPrivateAiApiKey(text);
@@ -77,14 +99,24 @@ public class StartCommandHandler implements ChatHandler {
                 userStates.put(chatId, StartBotState.NONE);
                 tempModelName.remove(chatId);
 
-                Message message = new Message();
-                message.setUser(user);
-                message.setContent(text);
-                message.setRole(false);
+                int userMessageId = update.getMessage().getMessageId();
+
+                Message message = Message.builder()
+                        .id((long) userMessageId)
+                        .user(user)
+                        .content(text)
+                        .role(false)
+                        .build();
                 messageService.save(message);
 
-                return messageUtils.generateSendMessageWithText(update,
-                        "Настройки сохранены! Можете делать запросы.");
+                messageUtils.sendEphemeralMessage(
+                        update,
+                        "Настройки сохранены! Можете делать запросы.",
+                        chatId,
+                        userMessageId,
+                        30);
+
+                return null;
             default:
                 return messageUtils.generateSendMessageWithText(update,
                         "Неизвестная команда. Напишите /start для начала.");

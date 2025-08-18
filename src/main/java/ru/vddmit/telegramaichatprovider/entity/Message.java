@@ -26,7 +26,7 @@ public class Message {
     @Column(nullable = false)
     boolean role; // true = AI, false = user
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     String content;
 
     @CreationTimestamp

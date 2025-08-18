@@ -7,6 +7,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.vddmit.telegramaichatprovider.entity.Message;
 import ru.vddmit.telegramaichatprovider.entity.User;
 import ru.vddmit.telegramaichatprovider.service.AiService;
@@ -37,15 +38,25 @@ public class ChatWithAiHandler implements ChatHandler {
     }
 
     @Override
-    public BotApiMethod<?> handle(Update update) {
+    public BotApiMethod<?> handle(Update update) throws TelegramApiException {
 
+        long chatId = update.getMessage().getChatId();
+        int userMessageId = update.getMessage().getMessageId();
         String text = update.getMessage().getText();
         org.telegram.telegrambots.meta.api.objects.User tgUser = update.getMessage().getFrom();
         User user = userService.findOrCreateUser(tgUser);
+
         if (user.getModel() == null || user.getPrivateAiApiKey() == null) {
-            return messageUtils.generateSendMessageWithText(update,
-                    "Кажется, вы еще не настроили модель и API-ключ. Пожалуйста, используйте команду /start для настройки.");
+            messageUtils.sendEphemeralMessage(
+                    update,
+                    "Кажется, вы еще не настроили модель и API-ключ. Пожалуйста, используйте команду /start для настройки.",
+                    chatId,
+                    userMessageId,
+                    30
+            );
+            return null;
         }
+
         Message userMessage = new Message();
         userMessage.setUser(user);
         userMessage.setContent(text);
@@ -67,7 +78,10 @@ public class ChatWithAiHandler implements ChatHandler {
             return messageUtils.generateSendMessageWithText(update, response);
 
         } catch (IllegalArgumentException e) {
-            return messageUtils.generateSendMessageWithText(update, "Неподдерживаемая модель ИИ. Проверьте настройки через /start. Ошибка: " + e.getMessage());
+            return messageUtils
+                    .generateSendMessageWithText(update,
+                            "Неподдерживаемая модель ИИ. Проверьте настройки через /start. Ошибка: "
+                                    + e.getMessage());
 
         } catch (Exception e) {
             return messageUtils.generateSendMessageWithText(update,
