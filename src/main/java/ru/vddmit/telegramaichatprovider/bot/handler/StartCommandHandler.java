@@ -9,7 +9,6 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import ru.vddmit.telegramaichatprovider.entity.Message;
 import ru.vddmit.telegramaichatprovider.entity.User;
 import ru.vddmit.telegramaichatprovider.entity.enums.StartBotState;
 import ru.vddmit.telegramaichatprovider.service.MessageService;
@@ -34,17 +33,10 @@ public class StartCommandHandler implements ChatHandler {
 
     @Override
     public boolean canHandle(Update update) {
-        Long chatId = update.getMessage().getChatId();
-        String text = update.getMessage().getText();
-        org.telegram.telegrambots.meta.api.objects.User tgUser =
-                update.getMessage().getFrom();
-
-        if (userService.findById(tgUser.getId()) == null) {
-            return false;
-        } else if (update.hasMessage() && update.getMessage().hasText()) {
-            return text.equals("/start")
-                    || userStates.get(chatId) != null
-                    && userStates.get(chatId) != StartBotState.NONE;
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            String text = update.getMessage().getText();
+            Long chatId = update.getMessage().getChatId();
+            return text.equals("/start") || userStates.containsKey(chatId);
         }
         return false;
     }
@@ -56,24 +48,55 @@ public class StartCommandHandler implements ChatHandler {
         org.telegram.telegrambots.meta.api.objects.User tgUser = update.getMessage().getFrom();
         User user = userService.findOrCreateUser(tgUser);
 
-
         if (text.equals("/start")) {
-            userStates.put(chatId, StartBotState.WAITING_FOR_MODEL_NAME);
-            tempModelName.remove(chatId);
-            SendMessage sendStartMessage = messageUtils
-                    .generateSendMessageWithText(update, """ 
-                            Привет! Введите название нейросети (корректное название модели можете узнать в документации или через API),
-                            которую хотите использовать:
-                            пока поддерживаю только Gemini
-                            
-                            Пример: gemini-2.5-pro""");
-
-            messageService
-                    .sendAndSaveBotMessage(sendStartMessage, user);
-
-            return null;
+            return handleStartCommand(update, user);
         }
 
+        return handleSetupSteps(update, user);
+    }
+
+    /**
+     * Обрабатывает команду /start.
+     * Проверяет, настроен ли пользователь. Если да - приветствует. Если нет - начинает настройку.
+     */
+    private BotApiMethod<?> handleStartCommand(Update update, User user) throws TelegramApiException {
+        if (user.getPrivateAiApiKey() != null && !user.getPrivateAiApiKey().isBlank()) {
+            String welcomeBackText = String.format(
+                    "С возвращением, %s! 👋\nВаша текущая модель: `%s`.\nПросто отправьте мне свой вопрос.",
+                    user.getFirstName(),
+                    user.getModel()
+            );
+            SendMessage welcomeMessage = messageUtils.generateSendMessageWithText(update, welcomeBackText);
+            welcomeMessage.enableMarkdown(true);
+            messageService.sendAndSaveBotMessage(welcomeMessage, user);
+        } else {
+            userStates.put(user.getId(), StartBotState.WAITING_FOR_MODEL_NAME);
+            tempModelName.remove(user.getId());
+
+            String startText = """
+                    Привет! Давайте настроим вашего AI-помощника.
+                    
+                    Сначала введите название нейросети, которую хотите использовать.
+                    Корректное название модели можно узнать в документации или через API.
+                    
+                    *Пока поддерживается только Gemini.*
+                    
+                    Пример: `gemini-1.5-pro`""";
+
+            SendMessage sendStartMessage = messageUtils.generateSendMessageWithText(update, startText);
+            sendStartMessage.enableMarkdown(true); // Включаем Markdown для форматирования
+
+            messageService.sendAndSaveBotMessage(sendStartMessage, user);
+        }
+        return null;
+    }
+
+    /**
+     * Обрабатывает шаги настройки после команды /start (ввод модели, ввод ключа).
+     */
+    private BotApiMethod<?> handleSetupSteps(Update update, User user) throws TelegramApiException {
+        Long chatId = user.getId();
+        String text = update.getMessage().getText();
         StartBotState state = userStates.getOrDefault(chatId, StartBotState.NONE);
 
         switch (state) {
@@ -81,45 +104,36 @@ public class StartCommandHandler implements ChatHandler {
                 tempModelName.put(chatId, text);
                 userStates.put(chatId, StartBotState.WAITING_FOR_API_KEY);
 
-                SendMessage sendMessage = messageUtils
-                        .generateSendMessageWithText(update, "Модель сохранена. Теперь введите API-ключ:");
-
-                messageService
-                        .sendAndSaveBotMessage(sendMessage, user);
-                return null;
-
+                SendMessage apiKeyMessage = messageUtils
+                        .generateSendMessageWithText(update, "Отлично! Теперь введите ваш API-ключ:");
+                messageService.sendAndSaveBotMessage(apiKeyMessage, user);
+                break;
             case WAITING_FOR_API_KEY:
-
                 String modelName = tempModelName.get(chatId);
-
                 user.setPrivateAiApiKey(text);
                 user.setModel(modelName);
                 userService.save(user);
 
-                userStates.put(chatId, StartBotState.NONE);
+                userStates.remove(chatId);
                 tempModelName.remove(chatId);
 
                 int userMessageId = update.getMessage().getMessageId();
-
-                Message message = Message.builder()
-                        .id((long) userMessageId)
-                        .user(user)
-                        .content(text)
-                        .role(false)
-                        .build();
-                messageService.save(message);
-
                 messageUtils.sendEphemeralMessage(
                         update,
                         "Настройки сохранены! Можете делать запросы.",
                         chatId,
                         userMessageId,
                         30);
+                break;
 
-                return null;
             default:
-                return messageUtils.generateSendMessageWithText(update,
-                        "Неизвестная команда. Напишите /start для начала.");
+
+                messageService.sendAndSaveBotMessage(
+                        messageUtils.generateSendMessageWithText(update, "Неизвестная команда. Напишите /start для начала."),
+                        user
+                );
+                break;
         }
+        return null;
     }
 }
